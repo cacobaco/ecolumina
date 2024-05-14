@@ -1,0 +1,19 @@
+#define WIFI_SSID "MONIZ"
+#define WIFI_PASS "Monixcasa"
+
+#define SERVER_IP "192.168.1.65"
+#define SERVER_PORT 3000
+
+#define ARDUINO_ID 1
+
+#define BUTTON_PIN 13
+#define LIGHT_PIN A0
+#define DISTANCE_TRIGGER_PIN 12
+#define DISTANCE_ECHO_PIN 11
+
+#define LIGHTS_NUMBER 3
+#define LIGHT1_PIN 2
+#define LIGHT2_PIN 3
+#define LIGHT3_PIN 4
+
+#define LIGHT_FRACTION 51
