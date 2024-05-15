@@ -191,16 +191,16 @@ void doReadings()
       }
 
       lightsDim[i] = dimValue;
-    }
 
-    if (!lightsUseMotionSensor[i])
-    {
-      continue;
-    }
+      if (!lightsUseMotionSensor[i])
+      {
+        continue;
+      }
 
-    if (motionSensorReading > lightsMotionThreshold[i] || motionSensorReading < lightsMotionThreshold[i + 1])
-    {
-      lightsDim[i] = 0;
+      if (motionSensorReading > lightsMotionThreshold[i] || motionSensorReading < lightsMotionThreshold[i + 1])
+      {
+        lightsDim[i] = 0;
+      }
     }
   }
 }
