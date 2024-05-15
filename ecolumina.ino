@@ -128,7 +128,7 @@ void parseResponse() {
   }
 
   for (int i = 0; i < lightsNumber; i++) {
-    if (!lightsUseSensor[i]) {
+    if (!lightsUseLightSensor[i]) {
       lightsDim[i] = responseDoc["lights"][i]["dim"];
     }
   }
@@ -199,8 +199,14 @@ void updateServerData() {
     client.println();
     client.println(jsonData);
 
+    Serial.println(jsonData);
+
     while (client.connected() && !client.available()) {
       delay(100);
+    }
+
+    while (client.available()) {
+      client.flush();
     }
 
     client.stop();
