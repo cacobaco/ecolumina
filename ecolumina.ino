@@ -17,28 +17,32 @@ StaticJsonDocument<2048> responseDoc;
 DeserializationError responseError;
 
 int lightsNumber = LIGHTS_NUMBER;
-int lightsPin[] = { LIGHT1_PIN, LIGHT2_PIN, LIGHT3_PIN };
+int lightsPin[] = {LIGHT1_PIN, LIGHT2_PIN, LIGHT3_PIN};
 
-int lightsDim[] = { 0, 0, 0 };
+int lightsDim[] = {0, 0, 0};
 
-bool lightsUseSensor[] = { true, true, true };
+bool lightsUseSensor[] = {true, true, true};
 
-bool lightsUseLightSensor[] = { true, true, true };
+bool lightsUseLightSensor[] = {true, true, true};
 
-bool lightsUseMotionSensor[] = { true, true, true };
+bool lightsUseMotionSensor[] = {true, true, true};
 
-bool lightsUseButton[] = { true, true, true };
+bool lightsUseButton[] = {true, true, true};
+
+int lightsMotionThreshold[] = {15, 10, 5, 0};
 
 int lightSensorReading = 0;
 float motionSensorReading = 0;
 int buttonReading = 0;
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
 
   Serial.println("Conectando à rede WIFI...");
   WiFi.begin(ssid, pass);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     Serial.print(".");
     delay(500);
   }
@@ -52,12 +56,14 @@ void setup() {
   pinMode(DISTANCE_TRIGGER_PIN, OUTPUT);
   pinMode(DISTANCE_ECHO_PIN, INPUT);
 
-  for (int i = 0; i < lightsNumber; i++) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
     pinMode(lightsPin[i], OUTPUT);
   }
 }
 
-void loop() {
+void loop()
+{
   readServerData();
 
   parseResponse();
@@ -70,28 +76,35 @@ void loop() {
   // readServerData and updateServerData probably add enough delay, if you need more just add it below
 }
 
-void readServerData() {
+void readServerData()
+{
   Serial.println("-------------------------");
   Serial.println("Lendo dados do servidor.");
 
-  if (client.connect(serverIP, serverPort)) {
+  if (client.connect(serverIP, serverPort))
+  {
     client.println("GET " + String(path) + String(ARDUINO_ID) + " HTTP/1.1");
     client.println("Host: " + String(serverIP) + ":" + String(serverPort));
     client.println("Connection: close");
     client.println();
 
-    while (client.connected() && !client.available()) {
+    while (client.connected() && !client.available())
+    {
       delay(100);
     }
 
     bool isBody = false;
     String response;
-    while (client.available()) {
+    while (client.available())
+    {
       String line = client.readStringUntil('\n');
 
-      if (line == "\r") {
+      if (line == "\r")
+      {
         isBody = true;
-      } else if (isBody) {
+      }
+      else if (isBody)
+      {
         response += line;
       }
     }
@@ -100,35 +113,44 @@ void readServerData() {
     responseError = deserializeJson(responseDoc, response);
 
     client.stop();
-  } else {
+  }
+  else
+  {
     Serial.println("Erro ao conectar ao servidor.");
   }
 
   Serial.println("-------------------------");
 }
 
-void parseResponse() {
+void parseResponse()
+{
   Serial.println("-------------------------");
   Serial.println("Fazendo parse da resposta.");
 
-  for (int i = 0; i < lightsNumber; i++) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
     lightsUseSensor[i] = responseDoc["lights"][i]["useSensor"];
   }
 
-  for (int i = 0; i < lightsNumber; i++) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
     lightsUseLightSensor[i] = responseDoc["lights"][i]["useLightSensor"];
   }
 
-  for (int i = 0; i < lightsNumber; i++) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
     lightsUseMotionSensor[i] = responseDoc["lights"][i]["useMotionSensor"];
   }
 
-  for (int i = 0; i < lightsNumber; i++) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
     lightsUseButton[i] = responseDoc["lights"][i]["useButton"];
   }
 
-  for (int i = 0; i < lightsNumber; i++) {
-    if (!lightsUseLightSensor[i]) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
+    if (!lightsUseLightSensor[i])
+    {
       lightsDim[i] = responseDoc["lights"][i]["dim"];
     }
   }
@@ -136,50 +158,74 @@ void parseResponse() {
   Serial.println("-------------------------");
 }
 
-void doReadings() {
+void doReadings()
+{
   buttonReading = readButton();
   lightSensorReading = readLight();
   motionSensorReading = readDistance();
 
-  for (int i = 0; i < lightsNumber; i++) {
-    if (!lightsUseSensor[i]) {
+  for (int i = 0; i < lightsNumber; i++)
+  {
+    if (!lightsUseSensor[i])
+    {
       continue;
     }
 
-    if (lightsUseButton[i] && buttonReading) {
+    if (lightsUseButton[i] && buttonReading)
+    {
       lightsDim[i] = 255;
       continue;
     }
 
-    // TODO use light+motion sensors to adjust dim
-    if (lightsUseLightSensor[i]) {
+    if (lightsUseLightSensor[i])
+    {
       int dimValue = 255 - lightSensorReading;
 
-      if (dimValue <= LIGHT_FRACTION) {
+      if (dimValue <= LIGHT_FRACTION)
+      {
         dimValue = 0;
-      } else if (dimValue >= 255 - LIGHT_FRACTION) {
+      }
+      else if (dimValue >= 255 - LIGHT_FRACTION)
+      {
         dimValue = 255;
       }
 
       lightsDim[i] = dimValue;
+    }
+
+    if (!lightsUseMotionSensor[i])
+    {
       continue;
+    }
+
+    if (motionSensorReading <= lightsMotionThreshold[i] && motionSensorReading > lightsMotionThreshold[i + 1])
+    {
+      lightsDim[i] = 255;
+    }
+    else
+    {
+      lightsDim[i] = 0;
     }
   }
 }
 
-void updateLights() {
-  for (int i = 0; i < lightsNumber; i++) {
+void updateLights()
+{
+  for (int i = 0; i < lightsNumber; i++)
+  {
     analogWrite(lightsPin[i], lightsDim[i]);
   }
 }
 
-void updateServerData() {
+void updateServerData()
+{
   Serial.println("-------------------------");
   Serial.println("Atualizando dados do servidor.");
 
   DynamicJsonDocument jsonDoc(1024);
-  
-  for (int i = 0; i < lightsNumber; i++) {
+
+  for (int i = 0; i < lightsNumber; i++)
+  {
     jsonDoc["dims"][i] = lightsDim[i];
   }
 
@@ -190,7 +236,8 @@ void updateServerData() {
   String jsonData;
   serializeJson(jsonDoc, jsonData);
 
-  if (client.connect(serverIP, serverPort)) {
+  if (client.connect(serverIP, serverPort))
+  {
     client.println("POST " + String(path) + String(arduinoId) + " HTTP/1.1");
     client.println("Host: " + String(serverIP) + ":" + String(serverPort));
     client.println("Content-Type: application/json");
@@ -201,31 +248,39 @@ void updateServerData() {
 
     Serial.println(jsonData);
 
-    while (client.connected() && !client.available()) {
+    while (client.connected() && !client.available())
+    {
       delay(100);
     }
 
-    while (client.available()) {
+    while (client.available())
+    {
       client.flush();
     }
 
     client.stop();
-  } else {
+  }
+  else
+  {
     Serial.println("Erro ao conectar ao servidor.");
   }
 
   Serial.println("-------------------------");
 }
 
-int readButton() {
+int readButton()
+{
   Serial.println("-------------------------");
   Serial.println("Lendo valor do botão.");
 
   int buttonState = digitalRead(BUTTON_PIN);
 
-  if (buttonState) {
+  if (buttonState)
+  {
     Serial.println("Pressed");
-  } else {
+  }
+  else
+  {
     Serial.println("Not pressed");
   }
 
@@ -233,7 +288,8 @@ int readButton() {
   return buttonState;
 }
 
-int readLight() {
+int readLight()
+{
   Serial.println("-------------------------");
   Serial.println("Lendo valor do sensor da luz.");
 
@@ -245,7 +301,8 @@ int readLight() {
   return analogValue;
 }
 
-float readDistance() {
+float readDistance()
+{
   Serial.println("-------------------------");
   Serial.println("Lendo valor do sensor de distância.");
 
@@ -258,11 +315,13 @@ float readDistance() {
   float duration = pulseIn(DISTANCE_ECHO_PIN, HIGH);
   float distance = (duration * 0.0343) / 2;
 
-  if (distance < 0) {
+  if (distance < 0)
+  {
     distance = 0;
   }
 
-  if (distance > 400) {
+  if (distance > 400)
+  {
     distance = 400;
   }
 
