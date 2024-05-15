@@ -165,13 +165,12 @@ void doReadings() {
       continue;
     }
   }
-
-  for (int i = 0; i < lightsNumber; i++) {
-    analogWrite(lightsPin[i], lightsDim[i]);
-  }
 }
 
 void updateLights() {
+  for (int i = 0; i < lightsNumber; i++) {
+    analogWrite(lightsPin[i], lightsDim[i]);
+  }
 }
 
 void updateServerData() {
