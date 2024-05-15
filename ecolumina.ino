@@ -198,11 +198,7 @@ void doReadings()
       continue;
     }
 
-    if (motionSensorReading <= lightsMotionThreshold[i] && motionSensorReading > lightsMotionThreshold[i + 1])
-    {
-      lightsDim[i] = 255;
-    }
-    else
+    if (motionSensorReading > lightsMotionThreshold[i] || motionSensorReading < lightsMotionThreshold[i + 1])
     {
       lightsDim[i] = 0;
     }
