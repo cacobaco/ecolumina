@@ -143,12 +143,12 @@ void doReadings() {
 
   for (int i = 0; i < lightsNumber; i++) {
     if (!lightsUseSensor[i]) {
-      break;
+      continue;
     }
 
     if (lightsUseButton[i] && buttonReading) {
       lightsDim[i] = 255;
-      break;
+      continue;
     }
 
     // TODO use light+motion sensors to adjust dim
@@ -162,7 +162,7 @@ void doReadings() {
       }
 
       lightsDim[i] = dimValue;
-      break;
+      continue;
     }
   }
 
